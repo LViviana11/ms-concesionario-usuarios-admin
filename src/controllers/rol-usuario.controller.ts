@@ -39,10 +39,10 @@ export class RolUsuarioController {
     },
   })
   async find(
-    @param.path.number('id') id: number,
+    @param.path.string('_id') _id: string,
     @param.query.object('filter') filter?: Filter<Usuario>,
   ): Promise<Usuario[]> {
-    return this.rolRepository.esta_asociado(id).find(filter);
+    return this.rolRepository.esta_asociado(_id).find(filter);
   }
 
   @post('/rols/{id}/usuarios', {
@@ -54,13 +54,13 @@ export class RolUsuarioController {
     },
   })
   async create(
-    @param.path.number('id') id: typeof Rol.prototype.id,
+    @param.path.number('id') id: typeof Rol.prototype._id,
     @requestBody({
       content: {
         'application/json': {
           schema: getModelSchemaRef(Usuario, {
             title: 'NewUsuarioInRol',
-            exclude: ['id'],
+            exclude: ['_id'],
             optional: ['id_rol']
           }),
         },
@@ -79,7 +79,7 @@ export class RolUsuarioController {
     },
   })
   async patch(
-    @param.path.number('id') id: number,
+    @param.path.string('_id') _id: string,
     @requestBody({
       content: {
         'application/json': {
@@ -90,7 +90,7 @@ export class RolUsuarioController {
     usuario: Partial<Usuario>,
     @param.query.object('where', getWhereSchemaFor(Usuario)) where?: Where<Usuario>,
   ): Promise<Count> {
-    return this.rolRepository.esta_asociado(id).patch(usuario, where);
+    return this.rolRepository.esta_asociado(_id).patch(usuario, where);
   }
 
   @del('/rols/{id}/usuarios', {
@@ -102,9 +102,9 @@ export class RolUsuarioController {
     },
   })
   async delete(
-    @param.path.number('id') id: number,
+    @param.path.string('_id') _id: string,
     @param.query.object('where', getWhereSchemaFor(Usuario)) where?: Where<Usuario>,
   ): Promise<Count> {
-    return this.rolRepository.esta_asociado(id).delete(where);
+    return this.rolRepository.esta_asociado(_id).delete(where);
   }
 }
