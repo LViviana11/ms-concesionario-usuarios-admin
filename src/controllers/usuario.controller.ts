@@ -44,6 +44,8 @@ export class UsuarioController {
     })
     usuario: Omit<Usuario, '_id'>,
   ): Promise<Usuario> {
+    let clave = "098765vv";
+    usuario.clave= clave;
     return this.usuarioRepository.create(usuario);
   }
 
