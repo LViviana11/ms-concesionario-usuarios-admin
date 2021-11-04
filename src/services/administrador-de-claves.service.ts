@@ -17,7 +17,7 @@ export class AdministradorDeClavesService {
   //Encriptar clave se instala npm install crypto-js
 
   cifrarTexto(texto: string){
-    let textoCifrado = CryptoJS.MD5(texto.toString());
+    let textoCifrado = CryptoJS.MD5(texto).toString();
     return textoCifrado;
   }
 

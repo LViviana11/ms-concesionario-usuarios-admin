@@ -1,3 +1,4 @@
+import {service} from '@loopback/core';
 import {
   Count,
   CountSchema,
@@ -19,11 +20,14 @@ import {
 } from '@loopback/rest';
 import {Credenciales, Usuario} from '../models';
 import {UsuarioRepository} from '../repositories';
+import {AdministradorDeClavesService} from '../services';
 
 export class UsuarioController {
   constructor(
     @repository(UsuarioRepository)
     public usuarioRepository: UsuarioRepository,
+    @service(AdministradorDeClavesService)
+    public servicioClaves: AdministradorDeClavesService,
   ) { }
 
   @post('/usuarios')
@@ -44,8 +48,14 @@ export class UsuarioController {
     })
     usuario: Omit<Usuario, '_id'>,
   ): Promise<Usuario> {
-    let clave = "098765vv";
-    usuario.clave= clave;
+    let clave = this.servicioClaves.GenerarClaveAleatoria();
+    console.log(clave);
+
+    //NOTIFICAR POR CORREO AL USUARIO LA CLAVE NORMAL
+    let claveCifrada = this.servicioClaves.cifrarTexto(clave);
+    console.log(this.servicioClaves.cifrarTexto(clave));
+
+    usuario.clave= claveCifrada;
     return this.usuarioRepository.create(usuario);
   }
 
@@ -172,6 +182,10 @@ export class UsuarioController {
       }
 
     });
+    if(usuario){
+      //Consumir el ms de tokens y generar uno nuevo //
+      // Se asignara ese token a la respuesta para el cliente
+    }
     return usuario;
   }
 
