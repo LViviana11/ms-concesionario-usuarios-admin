@@ -17,14 +17,14 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {Usuario} from '../models';
+import {Credenciales, Usuario} from '../models';
 import {UsuarioRepository} from '../repositories';
 
 export class UsuarioController {
   constructor(
     @repository(UsuarioRepository)
-    public usuarioRepository : UsuarioRepository,
-  ) {}
+    public usuarioRepository: UsuarioRepository,
+  ) { }
 
   @post('/usuarios')
   @response(200, {
@@ -147,4 +147,33 @@ export class UsuarioController {
   async deleteById(@param.path.string('id') _id: string): Promise<void> {
     await this.usuarioRepository.deleteById(_id);
   }
+
+  /**
+   * SECCIÓN DE SEGURIDAD
+   */
+
+  @post("/identificar-usuario", {
+    responses: {
+      '200': {
+        description: "Identificación de usuario"
+      }
+    }
+  })
+  async identificar(
+    @requestBody() credenciales: Credenciales
+
+  ): Promise<Usuario | null> {
+    let usuario = await this.usuarioRepository.findOne({
+      where: {
+        correo: credenciales.usuario,
+        clave: credenciales.clave
+      }
+
+    });
+    return usuario;
+  }
+
+
+
+
 }
