@@ -18,7 +18,7 @@ import {
   requestBody,
   response,
 } from '@loopback/rest';
-import {Credenciales, Usuario} from '../models';
+import {Credenciales, CredencialesCambioClave, CredencialesRecuperarClave, Usuario} from '../models';
 import {UsuarioRepository} from '../repositories';
 import {AdministradorDeClavesService} from '../services';
 
@@ -55,7 +55,7 @@ export class UsuarioController {
     let claveCifrada = this.servicioClaves.cifrarTexto(clave);
     console.log(this.servicioClaves.cifrarTexto(clave));
 
-    usuario.clave= claveCifrada;
+    usuario.clave = claveCifrada;
     return this.usuarioRepository.create(usuario);
   }
 
@@ -182,7 +182,8 @@ export class UsuarioController {
       }
 
     });
-    if(usuario){
+    if (usuario) {
+      usuario.clave=""
       //Consumir el ms de tokens y generar uno nuevo //
       // Se asignara ese token a la respuesta para el cliente
     }
@@ -190,6 +191,83 @@ export class UsuarioController {
   }
 
 
+  @post("/recuperar-clave", {
+    responses: {
+      '200': {
+        description: "Recuperación de clave de usuario"
+      }
+    }
+  })
+  async recuperarClave(
+    // @param.path.string('correo') correo: string,
+    @requestBody() credenciales: CredencialesRecuperarClave
 
+  ): Promise<Boolean> {
+    let usuario = await this.usuarioRepository.findOne({
+      where: {
+        correo: credenciales.correo
+      }
+
+    });
+    if (usuario) {
+      let clave = this.servicioClaves.GenerarClaveAleatoria();
+      console.log(clave);
+
+      let claveCifrada = this.servicioClaves.cifrarTexto(clave);
+      console.log(claveCifrada);
+
+      usuario.clave = claveCifrada;
+      await this.usuarioRepository.updateById(usuario._id, usuario);
+
+      //Consumir el ms de notificaciones //
+      // Se asignara ese token a la respuesta para el cliente
+      return true;
+
+    }
+    return false;
+  }
+
+  @post("/cambiar-clave", {
+    responses: {
+      '200': {
+        description: "Cambio de clave de usuarios"
+      }
+    }
+  })
+  async cambiarClave(
+    @requestBody() datos: CredencialesCambioClave
+
+  ): Promise<Boolean> {
+    let usuario = await this.usuarioRepository.findById(datos.id);
+    console.log(datos.id);
+
+    console.log(usuario);
+
+    console.log(usuario.clave);
+    console.log(datos.clave_actual);
+
+
+
+    if (usuario) {
+
+      if (usuario.clave == datos.clave_actual) {
+
+
+        usuario.clave = datos.nueva_clave;
+        console.log(datos.nueva_clave);
+
+        await this.usuarioRepository.updateById(datos.id, usuario);
+
+        //enviar email al usuario notificando el cambio de contraseña
+
+        return true;
+
+      } else {
+        return false;
+      }
+
+    }
+    return false;
+  }
 
 }
