@@ -5,29 +5,25 @@ import {
   Filter,
   FilterExcludingWhere,
   repository,
-  Where,
+  Where
 } from '@loopback/repository';
 import {
-  post,
-  param,
-  get,
-  getModelSchemaRef,
-  patch,
-  put,
-  del,
-  requestBody,
-  response,
+  del, get,
+  getModelSchemaRef, param, patch, post, put, requestBody,
+  response
 } from '@loopback/rest';
-import {Credenciales, CredencialesCambioClave, CredencialesRecuperarClave, Usuario} from '../models';
+import {Credenciales, CredencialesCambioClave, CredencialesRecuperarClave, NotificacionCorreo, NotificacionSms, Usuario} from '../models';
 import {UsuarioRepository} from '../repositories';
-import {AdministradorDeClavesService} from '../services';
-
+import {AdministradorDeClavesService, NotificacionesService} from '../services';
+import {Configuraciones} from "../config/configuraciones";
 export class UsuarioController {
   constructor(
     @repository(UsuarioRepository)
     public usuarioRepository: UsuarioRepository,
     @service(AdministradorDeClavesService)
     public servicioClaves: AdministradorDeClavesService,
+    @service(NotificacionesService)
+    public servicioNotificaciones: NotificacionesService
   ) { }
 
   @post('/usuarios')
@@ -52,6 +48,13 @@ export class UsuarioController {
     console.log(clave);
 
     //NOTIFICAR POR CORREO AL USUARIO LA CLAVE NORMAL
+    let notificacion = new NotificacionCorreo();
+    notificacion.destinatario = usuario.correo;
+    notificacion.asunto = "Registro en el sistema"
+    notificacion.mensaje = `${Configuraciones.saludo_notificaciones} ${usuario.nombre} ${Configuraciones.mensaje_clave_acceso} ${clave} y su usuario es el correo electrónico`
+    this.servicioNotificaciones.EnviarCorreo(notificacion);
+
+
     let claveCifrada = this.servicioClaves.cifrarTexto(clave);
     console.log(this.servicioClaves.cifrarTexto(clave));
 
@@ -183,7 +186,7 @@ export class UsuarioController {
 
     });
     if (usuario) {
-      usuario.clave=""
+      usuario.clave = ""
       //Consumir el ms de tokens y generar uno nuevo //
       // Se asignara ese token a la respuesta para el cliente
     }
@@ -220,7 +223,12 @@ export class UsuarioController {
       await this.usuarioRepository.updateById(usuario._id, usuario);
 
       //Consumir el ms de notificaciones //
-      // Se asignara ese token a la respuesta para el cliente
+      let notificacion = new NotificacionSms();
+        notificacion.destino = usuario.celular;
+        notificacion.mensaje = `${Configuraciones.saludo_notificaciones} ${usuario.nombre} ${Configuraciones.mensaje_recuperar_clave} ${clave}`
+        this.servicioNotificaciones.EnviarSms(notificacion);
+
+      // Enviar la nueva clave por SMS
       return true;
 
     }
@@ -259,6 +267,12 @@ export class UsuarioController {
         await this.usuarioRepository.updateById(datos.id, usuario);
 
         //enviar email al usuario notificando el cambio de contraseña
+        let notificacion = new NotificacionCorreo();
+        notificacion.destinatario = usuario.correo;
+        notificacion.asunto = Configuraciones.asunto_cambio_clave
+        notificacion.mensaje = `${Configuraciones.saludo_notificaciones} ${usuario.nombre} ${Configuraciones.asunto_cambio_clave} `
+        this.servicioNotificaciones.EnviarCorreo(notificacion);
+
 
         return true;
 
